@@ -36,9 +36,6 @@ class Gameoflife
     end
   end
 
-  def show_results
-    puts "La anchura del tablero es de #{@width} y la altura es de #{@height}"
-  end
 end
 
 tablero = Gameoflife.new(5, 5)
