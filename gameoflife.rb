@@ -1,43 +1,88 @@
-# Gameoflife : Declaracion de nuestro tablero principal
-class Gameoflife
-  def initialize(width, height)
-    @width = width
-    @height = height
-  end
+module GridLogic
+  def start_values(path_file)
+    filas = 0
+    columnas = 0
+    grilla = []
 
-  def create_table
-    @gamedimensions = Array.new(@height) { Array.new(@width) {'.'} }
-  end
+    File.foreach(path_file) do |line|
+      if line[0].to_i > 0
+        filas = line[0].to_i
+        columnas = line[2].to_i
+      end
 
-  def main
-    create_table
-    cells_randomizer(@gamedimensions)
-    show_table
-  end
-
-  def show_table
-    for a in 0..@height-1 do
-      puts @gamedimensions[a].join(' ')
-    end
-  end
-
-  def cells_randomizer(main_game)
-    # Ciclo de la altura para poder randomizar celulas vivas
-    for b in 0..@height-1
-      # Ciclo de la anchura para poder randomizar celulas vivas
-      for c in 0..@width-1
-        # @number va a generar un numero aleatorio con la funcion rand, si sale 1, entonces en la ubicacion del loop va a ingresar una celula viva
-        @number = rand(1..5)
-
-        if @number == 1
-          main_game[b][c] = "*"
+      if line[0].start_with?('.', '*')
+        empty_array = []
+        line.split('').count.times do |v|
+          empty_array.push(line[v]) if line[v] == '.' || line[v] == '*'
         end
+        grilla.push(empty_array)
       end
     end
+
+    return [grilla, filas, columnas]
+  end
+
+  def calculate_next_generation(grilla, filas, columnas, nueva_grilla)
+    filas.times do |y|
+      columnas.times do |x|
+        alive = grilla[y][x] == '*'
+
+        alive_neighbors = [
+          grilla[y - 1][x - 1] == '*', # Top left
+          grilla[y - 1][x] == '*', # Top center
+          grilla[y - 1][x + 1] == '*', # Top right
+          grilla[y][x + 1] == '*', # Right
+          (grilla[y + 1][x + 1] == '*' if grilla[y + 1] != nil), # Bottom right
+          (grilla[y + 1][x] == '*' if grilla[y + 1] != nil), # Bottom center
+          (grilla[y + 1][x - 1] == '*' if grilla[y + 1] != nil), # Bottom left
+          grilla[y][x - 1] == '*' # Left
+        ].count(true)
+
+        nueva_grilla[y][x] = '*' if (alive && alive_neighbors.between?(2, 3)) || (!alive && alive_neighbors === 3)
+      end
+    end
+
+    return nueva_grilla
+  end
+end
+
+class Grid
+  include GridLogic
+
+  attr_accessor :grilla, :generacion
+
+  attr_reader :filas, :columnas
+
+  def initialize(path_file)
+    @grilla, @filas, @columnas = start_values(path_file)
+    @generacion = 1
+
+    print_grilla
+  end
+
+  def next_generation
+    nueva_grilla = Array.new(filas) { Array.new(columnas) { '.' } }
+
+    self.grilla = calculate_next_generation(grilla, filas, columnas, nueva_grilla)
+
+    print_grilla
+  end
+
+  private
+
+  def print_grilla
+    puts "Generacion #{generacion}:"
+    filas.times do |y|
+      puts grilla[y].join
+    end
+    self.generacion += 1
   end
 
 end
 
-tablero = Gameoflife.new(5, 5)
+elGrid = Grid.new('./generacion_1.txt')
+elGrid.next_generation
+elGrid.next_generation
+elGrid.next_generation
+elGrid.next_generation
 
-tablero.main
